@@ -48,8 +48,7 @@ class CatApiService:
 
         try:
             response = await self.client.get(config.MEOWFACTS_API_URL)
-            response.raise_for_status()  # Перевірка на 200-OK
-            # Валідація
+            response.raise_for_status()
             return models.MeowFactResponse(**response.json())
         except Exception:
             return None
