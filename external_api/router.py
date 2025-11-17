@@ -55,9 +55,4 @@ async def get_dashboard_view(
 async def get_dashboard_json(
         service: CatApiService = Depends(get_api_service)
 ):
-    """
-    Цей ендпоїнт повертає чисті дані.
-    Він автоматично валідує відповідь за 'DashboardResponseModel'
-    і генерує документацію Swagger.
-    """
     return await service.get_dashboard_data()
