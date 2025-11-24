@@ -29,14 +29,21 @@ class Settings(BaseSettings):
     def final_postgres_url(self) -> str:
         if self.database_url:
             url = self.database_url
+
+            # If starts with postgres:// (Heroku/Render)
             if url.startswith("postgres://"):
                 url = url.replace("postgres://", "postgresql+asyncpg://", 1)
+
+            # If starts with postgresql:// (standart style)
+            elif url.startswith("postgresql://") and "asyncpg" not in url:
+                url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
+
             return url
 
+        # local
         return (
             f"{self.pg_db_driver}+asyncpg://{self.pg_username}:{self.pg_password}@"
             f"{self.pg_host}:{self.pg_port}/{self.pg_db_name}"
         )
-
 
 settings = Settings()
