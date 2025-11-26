@@ -1,7 +1,9 @@
+import logging
 import httpx
 import asyncio
 import json
 import redis.asyncio as redis
+import sentry_sdk
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
@@ -10,6 +12,8 @@ from . import models
 from settings import settings
 from database.base_schema import CatLog
 
+# setup logger
+logger = logging.getLogger(__name__)
 
 class CatApiService:
     def __init__(self, db: AsyncSession):
@@ -34,14 +38,16 @@ class CatApiService:
             resp = await self.client.get(config.WAIFU_PICS_API_URL)
             return (models.WaifuPicResponse(**resp.json()), resp.status_code) if resp.status_code == 200 else (None,
                                                                                                                resp.status_code)
-        except:
+        except Exception as e:
+            logger.error(f"Error fetching Neko: {e}")
             return None, 503
 
     async def _get_fact(self):
         try:
             resp = await self.client.get(config.MEOWFACTS_API_URL)
             return models.MeowFactResponse(**resp.json())
-        except:
+        except Exception as e:
+            logger.error(f"Error fetching Fact: {e}")
             return None
 
     async def _fetch_from_api(self) -> models.DashboardResponseModel:
@@ -53,6 +59,7 @@ class CatApiService:
         http_cat_url = f"{config.HTTP_CAT_BASE_URL}/{neko_status}"
         fact_text = fact_data.data[0] if (fact_data and fact_data.data) else "Meow API down."
 
+        logger.info("Fetched new data from External APIs")
         return models.DashboardResponseModel(
             neko_image_url=neko_url,
             fact=fact_text,
@@ -60,16 +67,22 @@ class CatApiService:
         )
 
     async def _save_to_db(self, data: models.DashboardResponseModel):
-        new_entry = CatLog(
-            fact=data.fact,
-            neko_url=str(data.neko_image_url),
-            http_cat_status=str(data.http_cat_url).split('/')[-1]
-        )
-        self.db.add(new_entry)
-        await self.db.commit()
+        try:
+            new_entry = CatLog(
+                fact=data.fact,
+                neko_url=str(data.neko_image_url),
+                http_cat_status=str(data.http_cat_url).split('/')[-1]
+            )
+            self.db.add(new_entry)
+            await self.db.commit()
+            logger.debug("Saved entry to DB")
+        except Exception as e:
+            logger.error(f"Error saving to DB: {e}")
+            sentry_sdk.capture_exception(e)
 
     async def refill_queue(self, count: int = 5):
         print(f"Background: Refilling queue (+{count})...")
+        logger.info(f"Background: Refilling queue (+{count})...")
         for _ in range(count):
             try:
                 data = await self._fetch_from_api()
@@ -77,6 +90,7 @@ class CatApiService:
                 await self.redis.rpush(settings.redis_queue_key, data.model_dump_json())
             except Exception as e:
                 print(f"Error filling queue: {e}")
+                logger.error(f"Error filling queue: {e}")
 
     async def get_dashboard_data(self, background_tasks) -> models.DashboardResponseModel:
         # Try get from redis
@@ -86,6 +100,7 @@ class CatApiService:
         except Exception as e:
             # If Redis (Upstash) is down work without cash
             print(f"Redis Error: {e}")
+            logger.error(f"Redis Error: {e}")
             cached_json = None
             queue_len = 0
 
@@ -95,9 +110,11 @@ class CatApiService:
 
         if cached_json:
             print("Cache Hit: Served from Redis")
+            logger.info("Cache Hit: Served from Redis")
             return models.DashboardResponseModel(**json.loads(cached_json))
 
         print("Cache Miss: Direct Fetch")
+        logger.warning("Cache Miss: Direct Fetch")
         data = await self._fetch_from_api()
         await self._save_to_db(data)
         return data

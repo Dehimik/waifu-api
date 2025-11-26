@@ -2,9 +2,15 @@ from fastapi import FastAPI
 from contextlib import asynccontextmanager
 from external_api import router as cat_router
 from database.base import init_db
+from logs.logger_config import setup_logging
+from logs.sentry import init_sentry
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    setup_logging()
+    init_sentry()
+
     await init_db()
     yield
 
