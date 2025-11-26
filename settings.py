@@ -19,6 +19,8 @@ class Settings(BaseSettings):
     pg_db_name: str = "postgres"
     pg_db_driver: str = "postgresql"
 
+    sentry_dsn: str | None = None
+
     model_config = ConfigDict(
         extra="allow",
         env_file=".env",
