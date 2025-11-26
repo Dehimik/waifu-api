@@ -25,3 +25,8 @@ app.include_router(cat_router.router, prefix="/api", tags=["Cat Dashboard"])
 @app.get("/")
 def read_root():
     return {"message": "Go to /api/dashboard/view"}
+
+
+@app.get("/health")
+async def health_check():
+    return {"status": "ok"}
