@@ -37,13 +37,13 @@ async def override_get_db():
     yield mock_session
 
 
-# client fixture
+# client fixtures
 @pytest.fixture(scope="session")
 def client():
-    # Replace session dependency for db
+    # replace session dependency for db
     app.dependency_overrides[get_db] = override_get_db
 
-    # Create mock plug
+    # create mock plug
     mock_init = AsyncMock(return_value=None)
 
     # patch main.init_db not a database.base.init_db

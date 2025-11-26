@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock, patch
 def test_read_root(client):
     response = client.get("/")
     assert response.status_code == 200
-    assert response.json() == {"message": "Go to /api/dashboard/view"}
+    assert response.json() == {"message": "Lets go to /api/dashboard/view"}
 
 
 # patch for no internet access

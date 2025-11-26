@@ -17,14 +17,14 @@ async def lifespan(app: FastAPI):
     yield
 
 
-app = FastAPI(title="Cat Dashboard API", version="2.1.0", lifespan=lifespan)
+app = FastAPI(title="Cool Cat Dashboard API", version="2.1.0", lifespan=lifespan)
 
 app.include_router(cat_router.router, prefix="/api", tags=["Cat Dashboard"])
 
 
 @app.get("/")
 def read_root():
-    return {"message": "Go to /api/dashboard/view"}
+    return {"message": "Lets go to /api/dashboard/view"}
 
 
 @app.get("/health")
