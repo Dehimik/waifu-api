@@ -96,15 +96,20 @@ jobs:
         env:
           HEALTHCHECK_URL: ${{ secrets.RENDER_HEALTHCHECK_URL }}
         run: |
-          echo "Waiting for production health..."
+          echo "Waiting for production health check at: $HEALTHCHECK_URL"
+
           for i in {1..40}; do
-            STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$HEALTHCHECK_URL" || true)
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" -L --connect-timeout 5 "$HEALTHCHECK_URL" || echo "000")
+
+            echo "Attempt $i/40: Received status $STATUS"
+
             if [ "$STATUS" = "200" ]; then
               echo "Service is healthy!"
               exit 0
             fi
-            echo "Still waiting... ($i/40)"
+
             sleep 10
           done
-          echo "Service did not pass healthcheck!"
+
+          echo "Service did not pass healthcheck (Last status: $STATUS)!"
           exit 1
