@@ -94,7 +94,7 @@ jobs:
     steps:
       - name: Wait for Render healthcheck
         env:
-          HEALTHCHECK_URL: ${{ secrets.RENDER_HEALTHCHECK_URL }}
+          HEALTHCHECK_URL: ${{ secrets.RENDER_HELTHCHECK_URL }}
         run: |
           echo "Waiting for production health check at: $RENDER_HELTHCHECK_URL"
           
