@@ -11,7 +11,7 @@ jobs:
   # linter job
   lint:
     name: Lint (black, isort, flake8)
-    if: github.event.pull_request.merged == true
+    if: github.event.pull_request.merged == true || github.event_name == 'push'
     runs-on: ubuntu-latest
 
     steps:
@@ -41,7 +41,7 @@ jobs:
   # test job
   tests:
     name: Tests + Coverage
-    if: github.event.pull_request.merged == true
+    if: github.event.pull_request.merged == true || github.event_name == 'push'
     runs-on: ubuntu-latest
     needs: lint
 
@@ -73,7 +73,7 @@ jobs:
   # deploy job
   deploy:
     name: Deploy to Render
-    if: github.event.pull_request.merged == true
+    if: github.event.pull_request.merged == true || github.event_name == 'push'
     runs-on: ubuntu-latest
     needs: tests
 
@@ -87,7 +87,7 @@ jobs:
    # health check job
   healthcheck:
     name: Health Check on Render
-    if: github.event.pull_request.merged == true
+    if: github.event.pull_request.merged == true || github.event_name == 'push'
     runs-on: ubuntu-latest
     needs: deploy
 
