@@ -13,5 +13,5 @@ exclude = '''
 
 [tool.isort]
 profile = "black"
-line_length = 120
+line_length = 121
 skip = ["venv", ".venv"]
