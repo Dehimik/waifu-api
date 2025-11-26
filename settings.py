@@ -1,5 +1,5 @@
-from pydantic_settings import BaseSettings
 from pydantic import ConfigDict
+from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
@@ -47,5 +47,6 @@ class Settings(BaseSettings):
             f"{self.pg_db_driver}+asyncpg://{self.pg_username}:{self.pg_password}@"
             f"{self.pg_host}:{self.pg_port}/{self.pg_db_name}"
         )
+
 
 settings = Settings()

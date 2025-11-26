@@ -1,29 +1,28 @@
-import logging
-import httpx
 import asyncio
 import json
+import logging
+
+import httpx
 import redis.asyncio as redis
 import sentry_sdk
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from . import config
-from . import models
-from settings import settings
 from database.base_schema import CatLog
+from settings import settings
+
+from . import config, models
 
 # setup logger
 logger = logging.getLogger(__name__)
+
 
 class CatApiService:
     def __init__(self, db: AsyncSession):
         self.client = httpx.AsyncClient()
         self.db = db
 
-        self.redis = redis.from_url(
-            settings.redis_url,
-            decode_responses=True
-        )
+        self.redis = redis.from_url(settings.redis_url, decode_responses=True)
 
     async def __aenter__(self):
         await self.client.__aenter__()
@@ -36,8 +35,11 @@ class CatApiService:
     async def _get_neko(self):
         try:
             resp = await self.client.get(config.WAIFU_PICS_API_URL)
-            return (models.WaifuPicResponse(**resp.json()), resp.status_code) if resp.status_code == 200 else (None,
-                                                                                                               resp.status_code)
+            return (
+                (models.WaifuPicResponse(**resp.json()), resp.status_code)
+                if resp.status_code == 200
+                else (None, resp.status_code)
+            )
         except Exception as e:
             logger.error(f"Error fetching Neko: {e}")
             return None, 503
@@ -60,18 +62,12 @@ class CatApiService:
         fact_text = fact_data.data[0] if (fact_data and fact_data.data) else "Meow API down."
 
         logger.info("Fetched new data from External APIs")
-        return models.DashboardResponseModel(
-            neko_image_url=neko_url,
-            fact=fact_text,
-            http_cat_url=http_cat_url
-        )
+        return models.DashboardResponseModel(neko_image_url=neko_url, fact=fact_text, http_cat_url=http_cat_url)
 
     async def _save_to_db(self, data: models.DashboardResponseModel):
         try:
             new_entry = CatLog(
-                fact=data.fact,
-                neko_url=str(data.neko_image_url),
-                http_cat_status=str(data.http_cat_url).split('/')[-1]
+                fact=data.fact, neko_url=str(data.neko_image_url), http_cat_status=str(data.http_cat_url).split("/")[-1]
             )
             self.db.add(new_entry)
             await self.db.commit()
